@@ -1,4 +1,4 @@
-package com.example.ecommerce_api.service;
+package com.example.ecommerce_api.service.impl;
 
 import com.example.ecommerce_api.entity.Order;
 import com.example.ecommerce_api.repository.OrderRepository;
