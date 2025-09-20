@@ -33,15 +33,27 @@
 // }
 
 
-package com.example.ecommerce_api.service.impl;
+package com.example.ecommerce_api.service;
 
 import com.example.ecommerce_api.DTO.ProductDTO;
+import com.example.ecommerce_api.entity.Customer;
+import com.example.ecommerce_api.entity.Product;
+
 import java.util.List;
 
+
+import java.util.List;
+import java.util.Optional;
+
 public interface ProductService {
-    ProductDTO createProduct(ProductDTO productDTO);
-    ProductDTO getProductById(Long id);
-    List<ProductDTO> getAllProducts();
-    ProductDTO updateProduct(Long id, ProductDTO productDTO);
+    Product createProduct(Product product);
+    Optional<Product> getProductById(Long id);
+    List<Product> getAllProducts();
+    Product updateProduct(Long id, Product product);
     void deleteProduct(Long id);
+    List<Product> getProductsByCategory(Long categoryId);
+
+    Optional<Product> findById(Long productId);
+
+
 }
