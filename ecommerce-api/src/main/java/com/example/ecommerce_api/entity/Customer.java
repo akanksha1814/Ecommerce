@@ -19,6 +19,7 @@ public class Customer {
     private String email;
     private String phone;
     private String address;
+    private String password;
     
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL)
     private List<Order> orders;

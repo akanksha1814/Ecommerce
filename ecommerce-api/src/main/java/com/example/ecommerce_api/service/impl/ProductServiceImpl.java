@@ -5,7 +5,6 @@ import com.example.ecommerce_api.entity.Category;
 import com.example.ecommerce_api.entity.Product;
 import com.example.ecommerce_api.repository.CategoryRepository;
 import com.example.ecommerce_api.repository.ProductRepository;
-import com.example.ecommerce_api.service.impl.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -31,7 +30,8 @@ public class ProductServiceImpl implements ProductService {
             // .stock(productDTO.getStock()) // <-- This line causes the error
             .category(category)
             .build();
-        product.setStock(productDTO.getStock()); // <-- Set stock after building
+        product.setStock(productDTO.getStock());
+        product.setId(null);
 
         Product saved = productRepository.save(product);
         return mapToDTO(saved);

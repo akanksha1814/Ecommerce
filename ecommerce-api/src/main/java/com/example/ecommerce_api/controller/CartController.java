@@ -1,7 +1,8 @@
 package com.example.ecommerce_api.controller;
 
 import com.example.ecommerce_api.entity.Cart;
-import com.example.ecommerce_api.service.CartService;
+import com.example.ecommerce_api.service.impl.CartService;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

@@ -1,9 +1,11 @@
 package com.example.ecommerce_api.controller;
 
 import com.example.ecommerce_api.entity.Customer;
+import com.example.ecommerce_api.repository.CustomerRepository;
 import com.example.ecommerce_api.service.impl.CustomerService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 
@@ -21,6 +23,25 @@ public class CustomerController {
         return customerService.getAllCustomers();
     }
 
+    @Autowired
+    private CustomerRepository userRepository;
+
+    // Signup
+    @PostMapping("/signup")
+    public String signup(@RequestBody Customer user) {
+        userRepository.save(user);
+        return "User registered successfully!";
+    }
+
+    // Login
+    @PostMapping("/login")
+    public String login(@RequestBody Customer loginUser) {
+        Customer customer = userRepository.findByEmail(loginUser.getEmail());
+        if (customer != null && customer.getPassword().equals(loginUser.getPassword())) {
+            return "Login successful!";
+        }
+        return "Invalid credentials!";
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<Customer> getCustomerById(@PathVariable Long id) {

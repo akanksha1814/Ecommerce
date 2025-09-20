@@ -2,7 +2,6 @@ package com.example.ecommerce_api.service.impl;
 
 import com.example.ecommerce_api.entity.*;
 import com.example.ecommerce_api.repository.*;
-import com.example.ecommerce_api.service.CartService;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -41,7 +40,6 @@ public class CartServiceImpl implements CartService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        // check if item already exists
         Optional<CartItem> existingItem = cart.getItems().stream()
                 .filter(item -> item.getProduct().getId().equals(productId))
                 .findFirst();
