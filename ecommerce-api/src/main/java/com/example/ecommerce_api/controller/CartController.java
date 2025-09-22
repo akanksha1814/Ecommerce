@@ -8,6 +8,8 @@ import com.example.ecommerce_api.entity.Product;
 import com.example.ecommerce_api.service.CartItemService;
 import com.example.ecommerce_api.service.CartService;
 import com.example.ecommerce_api.service.ProductService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +20,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/carts")
+@Tag(name = "Carts", description = "APIs for managing customer carts and cart items")
 public class CartController {
 
     private final CartService cartService;
@@ -25,7 +28,7 @@ public class CartController {
     private final ProductService productService;
 
     // Constructor
-    public CartController( CartItemService cartItemService, CartService cartService,ProductService productService) {
+    public CartController(CartItemService cartItemService, CartService cartService, ProductService productService) {
         this.cartService = cartService;
         this.cartItemService = cartItemService;
         this.productService = productService;
@@ -53,7 +56,7 @@ public class CartController {
         return dto;
     }
 
-    // Get cart by customer ID
+    @Operation(summary = "Get cart by customer ID")
     @GetMapping("/{customerId}")
     public ResponseEntity<?> getCart(@PathVariable Long customerId) {
         Optional<Cart> cart = cartService.getCartByCustomerId(customerId);
@@ -66,8 +69,7 @@ public class CartController {
         }
     }
 
-
-    // Add item to cart
+    @Operation(summary = "Add item to cart")
     @PostMapping("/{customerId}/add/{productId}")
     public ResponseEntity<?> addItem(@PathVariable Long customerId,
                                      @PathVariable Long productId,
@@ -83,7 +85,7 @@ public class CartController {
         }
     }
 
-    // Remove item from cart
+    @Operation(summary = "Remove item from cart")
     @DeleteMapping("/{customerId}/remove/{productId}")
     public ResponseEntity<?> removeItem(@PathVariable Long customerId,
                                         @PathVariable Long productId) {
@@ -95,7 +97,7 @@ public class CartController {
         }
     }
 
-    // Clear entire cart
+    @Operation(summary = "Clear entire cart")
     @DeleteMapping("/{customerId}/clear")
     public ResponseEntity<?> clearCart(@PathVariable Long customerId) {
         boolean cleared = cartService.clearCart(customerId);
@@ -107,7 +109,7 @@ public class CartController {
         }
     }
 
-    // Create new cart (if customer is new)
+    @Operation(summary = "Create new cart for a customer")
     @PostMapping("/{customerId}")
     public ResponseEntity<CartDTO> createCart(@PathVariable Long customerId) {
         Cart cart = cartService.createCartForCustomer(customerId);
@@ -116,6 +118,7 @@ public class CartController {
 
     /****** CartItem-related mappings ******/
 
+    @Operation(summary = "Add or update item in cart by cart ID")
     @PostMapping("/{cartId}/items")
     public ResponseEntity<?> addItemToCart(@PathVariable Long cartId,
                                            @RequestParam Long productId,
@@ -130,7 +133,6 @@ public class CartController {
         Cart cart = cartOpt.get();
         Product product = productOpt.get();
 
-        // Check if item already exists
         Optional<CartItem> existingItemOpt = cartItemService.findByCartAndProduct(cartId, productId);
 
         CartItem item;
@@ -149,6 +151,7 @@ public class CartController {
         return ResponseEntity.ok(mapToDTO(cartService.save(cart)));
     }
 
+    @Operation(summary = "Update cart item quantity")
     @PutMapping("/{cartId}/items/{itemId}")
     public ResponseEntity<?> updateCartItem(@PathVariable Long cartId,
                                             @PathVariable Long itemId,
@@ -163,6 +166,7 @@ public class CartController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "Remove cart item by item ID")
     @DeleteMapping("/{cartId}/items/{itemId}")
     public ResponseEntity<?> removeCartItem(@PathVariable Long cartId,
                                             @PathVariable Long itemId) {

@@ -9,37 +9,36 @@ import com.example.ecommerce_api.entity.Product;
 import com.example.ecommerce_api.service.CustomerService;
 import com.example.ecommerce_api.service.OrderItemService;
 import com.example.ecommerce_api.service.OrderService;
-
 import com.example.ecommerce_api.service.ProductService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static org.springframework.http.ResponseEntity.status;
-
 @RestController
 @RequestMapping("/api/orders")
+@Tag(name = "Orders", description = "APIs for managing orders and order items")
 public class OrderController {
 
     private final OrderService orderService;
     private final OrderItemService orderItemService;
     private final ProductService productService;
-    private final CustomerService CustomerService;
+    private final CustomerService customerService;
 
     public OrderController(OrderService orderService,
                            OrderItemService orderItemService,
                            ProductService productService,
-                           CustomerService CustomerService) {
+                           CustomerService customerService) {
         this.orderService = orderService;
         this.orderItemService = orderItemService;
         this.productService = productService;
-        this.CustomerService = CustomerService;
+        this.customerService = customerService;
     }
 
     // === HELPER METHOD TO MAP ENTITY → DTO ===
@@ -62,6 +61,7 @@ public class OrderController {
     }
 
     // === ORDER ENDPOINTS ===
+    @Operation(summary = "Get order by ID", description = "Retrieve order details including items and customer info")
     @GetMapping("/{id}")
     public ResponseEntity<?> getOrder(@PathVariable Long id) {
         return orderService.getOrderById(id)
@@ -69,6 +69,7 @@ public class OrderController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "Get all orders", description = "Retrieve all orders with their items and customer details")
     @GetMapping
     public ResponseEntity<List<OrderDTO>> getAllOrders() {
         List<OrderDTO> orders = orderService.getAllOrders()
@@ -78,12 +79,13 @@ public class OrderController {
         return ResponseEntity.ok(orders);
     }
 
+    @Operation(summary = "Create a new order", description = "Create an order for a specific customer with order items")
     @PostMapping
     public ResponseEntity<?> createOrder(@RequestBody OrderDTO orderDTO) {
         if (orderDTO.getCustomerId() == null) {
             return ResponseEntity.badRequest().body("Order must have a customerId");
         }
-        Optional<Customer> customerOptional = CustomerService.getCustomerById(orderDTO.getCustomerId());
+        Optional<Customer> customerOptional = customerService.getCustomerById(orderDTO.getCustomerId());
         if (customerOptional.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body("Customer not found with id:" + orderDTO.getCustomerId());
@@ -96,7 +98,6 @@ public class OrderController {
         order.setTotalPrice(orderDTO.getTotalPrice());
         order.setCustomer(customer);
 
-        // Convert DTO items to entity
         if (orderDTO.getItems() != null) {
             List<OrderItem> items = orderDTO.getItems().stream().map(dto -> {
                 Product product = productService.getProductById(dto.getProductId()).orElse(null);
@@ -116,6 +117,7 @@ public class OrderController {
         return ResponseEntity.ok(mapToDTO(savedOrder));
     }
 
+    @Operation(summary = "Delete order", description = "Delete an order by its ID")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteOrder(@PathVariable Long id) {
         return orderService.getOrderById(id)
@@ -126,6 +128,7 @@ public class OrderController {
     }
 
     // === ORDER ITEM ENDPOINTS ===
+    @Operation(summary = "Add an item to an order", description = "Add a product to an existing order")
     @PostMapping("/{orderId}/items")
     public ResponseEntity<?> addOrderItem(@PathVariable Long orderId,
                                           @RequestBody OrderItemDTO orderItemDTO) {
@@ -158,6 +161,7 @@ public class OrderController {
         return ResponseEntity.ok(mapToDTO(orderService.saveOrder(order)));
     }
 
+    @Operation(summary = "Remove an item from an order", description = "Delete a specific item from an existing order")
     @DeleteMapping("/{orderId}/items/{itemId}")
     public ResponseEntity<?> removeOrderItem(@PathVariable Long orderId,
                                              @PathVariable Long itemId) {

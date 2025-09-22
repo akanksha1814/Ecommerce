@@ -3,12 +3,11 @@ package com.example.ecommerce_api.controller;
 import com.example.ecommerce_api.DTO.ProductDTO;
 import com.example.ecommerce_api.entity.Product;
 import com.example.ecommerce_api.service.ProductService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,6 +15,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
+@Tag(name = "Products", description = "APIs for managing products")
 public class ProductController {
 
     private final ProductService productService;
@@ -47,12 +47,14 @@ public class ProductController {
         return product;
     }
 
+    @Operation(summary = "Create a new product", description = "Add a new product to the catalog")
     @PostMapping
     public ResponseEntity<ProductDTO> createProduct(@RequestBody ProductDTO productDTO) {
         Product saved = productService.createProduct(convertToEntity(productDTO));
         return ResponseEntity.ok(convertToDTO(saved));
     }
 
+    @Operation(summary = "Get product by ID", description = "Retrieve product details by its ID")
     @GetMapping("/{id}")
     public ResponseEntity<ProductDTO> getProduct(@PathVariable Long id) {
         return productService.getProductById(id)
@@ -60,6 +62,7 @@ public class ProductController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "Get all products", description = "Retrieve a list of all products")
     @GetMapping
     public ResponseEntity<List<ProductDTO>> getAllProducts() {
         List<ProductDTO> dtos = productService.getAllProducts()
@@ -69,19 +72,21 @@ public class ProductController {
         return ResponseEntity.ok(dtos);
     }
 
+    @Operation(summary = "Update product", description = "Update an existing product by ID")
     @PutMapping("/{id}")
     public ResponseEntity<ProductDTO> updateProduct(@PathVariable Long id, @RequestBody ProductDTO productDTO) {
         Product updated = productService.updateProduct(id, convertToEntity(productDTO));
         return ResponseEntity.ok(convertToDTO(updated));
     }
 
+    @Operation(summary = "Delete product", description = "Delete a product by its ID")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
     }
 
-    // Optional extra mapping: Get products by category
+    @Operation(summary = "Get products by category", description = "Retrieve all products under a specific category")
     @GetMapping("/category/{categoryId}")
     public ResponseEntity<List<ProductDTO>> getProductsByCategory(@PathVariable Long categoryId) {
         List<ProductDTO> dtos = productService.getProductsByCategory(categoryId)
@@ -91,4 +96,3 @@ public class ProductController {
         return ResponseEntity.ok(dtos);
     }
 }
-
