@@ -7,7 +7,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -59,42 +61,45 @@ public class CustomerController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping
-    public ResponseEntity<CustomerDTO> createCustomer(@RequestBody CustomerDTO dto) {
-        Customer saved = customerService.saveCustomer(toEntity(dto));
-        return ResponseEntity.status(HttpStatus.CREATED).body(toDTO(saved));
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<CustomerDTO> updateCustomer(@PathVariable Long id, @RequestBody CustomerDTO dto) {
-        return customerService.getCustomerById(id)
-                .map(existing -> {
-                    existing.setName(dto.getName());
-                    existing.setEmail(dto.getEmail());
-                    existing.setPhone(dto.getPhone());
-                    existing.setAddress(dto.getAddress());
-                    return ResponseEntity.ok(toDTO(customerService.saveCustomer(existing)));
-                })
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    // NEW: Partial update using PATCH
     @PatchMapping("/{id}")
-    public ResponseEntity<CustomerDTO> patchCustomer(@PathVariable Long id, @RequestBody CustomerDTO dto) {
+    public ResponseEntity<?> updateCustomerPartially(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> updates) {
+
         return customerService.getCustomerById(id)
-                .map(existing -> {
-                    if (dto.getName() != null) existing.setName(dto.getName());
-                    if (dto.getEmail() != null) existing.setEmail(dto.getEmail());
-                    if (dto.getPhone() != null) existing.setPhone(dto.getPhone());
-                    if (dto.getAddress() != null) existing.setAddress(dto.getAddress());
-                    return ResponseEntity.ok(toDTO(customerService.saveCustomer(existing)));
+                .map(existingCustomer -> {
+                    updates.forEach((key, value) -> {
+                        switch (key) {
+                            case "name":
+                                existingCustomer.setName((String) value);
+                                break;
+                            case "phone":
+                                existingCustomer.setPhone((String) value);
+                                break;
+                            case "address":
+                                existingCustomer.setAddress((String) value);
+                                break;
+                            default:
+                                throw new IllegalArgumentException("Invalid field: " + key);
+                        }
+                    });
+                    Customer updatedCustomer = customerService.saveCustomer(existingCustomer);
+                    return ResponseEntity.ok(updatedCustomer);
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCustomer(@PathVariable Long id) {
-        customerService.deleteCustomer(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Map<String, String>> deleteCustomer(@PathVariable Long id) {
+        Optional<Customer> customer = customerService.getCustomerById(id);
+        Map<String, String> response = new HashMap<>();
+
+        if (customer.isPresent()) {
+            customerService.deleteCustomer(id);
+            response.put("message", "Customer with ID " + id + " was successfully deleted.");
+            return ResponseEntity.ok(response);
+        } else {
+            response.put("message", "Customer with ID " + id + " was not found.");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
     }
 }

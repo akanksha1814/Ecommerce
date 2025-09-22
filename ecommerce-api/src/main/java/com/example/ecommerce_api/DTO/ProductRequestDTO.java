@@ -6,14 +6,11 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.*;
 
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProductDTO {
-    private Long id;
-
+public class ProductRequestDTO {
     @NotBlank(message = "Product name is required")
     private String name;
 
@@ -29,7 +26,4 @@ public class ProductDTO {
 
     @NotNull(message = "Category ID is required")
     private Long categoryId;
-
-    // For response - include category name
-    private String categoryName;
 }

@@ -15,4 +15,8 @@ public interface CustomerService {
     Optional<Customer> getCustomerById(Long id);
     Customer saveCustomer(Customer customer);
     void deleteCustomer(Long id);
+
+    Customer findOrCreateByEmail(String email);
+
+
 }

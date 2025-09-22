@@ -39,4 +39,12 @@ public class CustomerServiceImpl implements CustomerService {
             throw new IllegalArgumentException("Customer with id " + id + " not found");
         }
     }
+    @Override
+    public Customer findOrCreateByEmail(String email){
+        return customerRepository.findByEmail(email).orElseGet(()->{
+            Customer customer = new Customer();
+            customer.setEmail(email);
+            return customerRepository.save(customer);
+        });
+    }
 }

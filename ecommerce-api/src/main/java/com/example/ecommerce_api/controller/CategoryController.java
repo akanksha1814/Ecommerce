@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/categories")
 public class CategoryController {
@@ -56,11 +58,13 @@ public class CategoryController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCategory(@PathVariable Long id) {
         boolean deleted = categoryService.deleteCategory(id);
+
         if (deleted) {
-            return ResponseEntity.noContent().build();
+            return ResponseEntity.ok(Map.of("message", "Category with ID " + id + " was successfully deleted."));
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Category not found with id: " + id);
+                    .body(Map.of("message", "Category not found with ID " + id));
         }
     }
+
 }

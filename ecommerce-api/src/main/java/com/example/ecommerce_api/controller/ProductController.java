@@ -4,6 +4,7 @@ import com.example.ecommerce_api.DTO.ProductDTO;
 import com.example.ecommerce_api.entity.Product;
 import com.example.ecommerce_api.service.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,6 +12,8 @@ import java.util.List;
 
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -76,10 +79,18 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
-        productService.deleteProduct(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
+        Optional<Product> product = productService.getProductById(id);
+        if(product.isPresent()) {
+            productService.deleteProduct(id);
+            return ResponseEntity.ok(Map.of("message", "Product deleted successfully"));
+        }
+        else{
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Product not found"));
+        }
     }
+
 
     // Optional extra mapping: Get products by category
     @GetMapping("/category/{categoryId}")

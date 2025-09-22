@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -164,10 +165,14 @@ public class OrderController {
         return orderItemService.findById(itemId)
                 .map(item -> {
                     if (!item.getOrder().getId().equals(orderId)) {
-                        return ResponseEntity.badRequest().body("Item does not belong to this order");
+                        return ResponseEntity.badRequest()
+                                .body(Map.of("message", "Item does not belong to the specified order"));
                     }
                     orderItemService.delete(item);
-                    return ResponseEntity.noContent().build();
-                }).orElse(ResponseEntity.notFound().build());
+                    return ResponseEntity.ok(Map.of("message", "Item successfully removed from order"));
+                })
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "Item not found")));
     }
+
 }

@@ -1,0 +1,17 @@
+/* Error response box styling */
+.opblock.opblock-post .responses-wrapper .response-col_description pre,
+.opblock.opblock-get .responses-wrapper .response-col_description pre,
+.opblock.opblock-put .responses-wrapper .response-col_description pre,
+.opblock.opblock-patch .responses-wrapper .response-col_description pre,
+.opblock.opblock-delete .responses-wrapper .response-col_description pre {
+    border-left: 5px solid red;
+    background-color: #ffe5e5 !important;
+}
+
+/* Make response headers red if status >= 400 */
+.response-col_status[data-code^="4"],
+.response-col_status[data-code^="5"] {
+    background-color: red !important;
+    color: white !important;
+    font-weight: bold;
+}
