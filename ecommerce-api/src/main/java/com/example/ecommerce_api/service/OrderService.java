@@ -1,19 +1,17 @@
 package com.example.ecommerce_api.service;
 
-import com.example.ecommerce_api.entity.Order;
-import com.example.ecommerce_api.repository.OrderRepository;
-import org.springframework.stereotype.Service;
+
+
+import com.example.ecommerce_api.dto.OrderDto;
 
 import java.util.List;
-import java.util.Optional;
-
-import java.util.List;
-import java.util.Optional;
 
 public interface OrderService {
-    Order saveOrder(Order order);
-    void deleteOrder(Order order);
-    Optional<Order> getOrderById(Long id);
-    List<Order> getAllOrders();
-    List<Order> getOrdersByCustomer(Long customerId);
+    OrderDto createOrder(Object request);
+    List<OrderDto> getAllOrders();
+    OrderDto getOrderById(Long id);
+    OrderDto updateOrderStatus(Long id, String status);
+    void deleteOrder(Long id);
+    List<OrderDto> getOrdersByCustomerId(Long customerId);
+    List<OrderDto> getOrdersByStatus(String status);
 }

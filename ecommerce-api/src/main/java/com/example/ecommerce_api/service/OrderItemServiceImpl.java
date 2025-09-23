@@ -38,6 +38,7 @@ public class OrderItemServiceImpl implements OrderItemService {
 
     @Override
     public Optional<OrderItem> findByOrderAndProduct(Long orderId, Long productId) {
-        return orderItemRepository.findByOrderIdAndProductId(orderId, productId);
+         List<OrderItem> orderItems =orderItemRepository.findByOrder_IdAndProduct_Id(orderId, productId);
+         return orderItems.isEmpty() ? Optional.empty() : Optional.of(orderItems.get(0));
     }
 }

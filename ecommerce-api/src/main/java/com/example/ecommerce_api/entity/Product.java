@@ -1,42 +1,40 @@
 package com.example.ecommerce_api.entity;
-
-
+import com.example.ecommerce_api.entity.OrderItem;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+
+import java.util.List;
 
 @Entity
+@Table(name = "products")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Product {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long product_id;
 
     @Column(nullable = false)
     private String name;
 
+    @Column(length = 1000)
     private String description;
 
     @Column(nullable = false)
-    private double price;
+    private Double price;
 
-    // Consolidated to single stock field (removed quantity)
     @Column(nullable = false)
-    private Integer stock;
+    private Integer stockQuantity;
 
-    // FIXED: Proper relationship mapping
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id", nullable = false)
-    private Category category;
+    @Column(nullable = false)
+    private String category;
 
-    // Additional getter/setter for stock (if needed)
-    public Integer getStock() {
-        return stock;
-    }
-
-    public void setStock(Integer stock) {
-        this.stock = stock;
-    }
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<OrderItem> orderItems;
 }

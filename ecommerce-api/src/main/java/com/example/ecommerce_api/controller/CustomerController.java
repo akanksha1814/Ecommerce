@@ -1,104 +1,182 @@
 package com.example.ecommerce_api.controller;
 
-import com.example.ecommerce_api.DTO.CustomerDTO;
-import com.example.ecommerce_api.entity.Customer;
+
+
+import com.example.ecommerce_api.dto.ApiResponse;
+import com.example.ecommerce_api.dto.CustomerDto;
 import com.example.ecommerce_api.service.CustomerService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
+import jakarta.validation.Valid;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/customers")
+//@RequiredArgsConstructor
+@Validated
+@Tag(name = "Customer Management", description = "APIs for managing customers")
 public class CustomerController {
 
     private final CustomerService customerService;
-
     public CustomerController(CustomerService customerService) {
         this.customerService = customerService;
     }
 
-    // Helper: map Entity -> DTO
-    private CustomerDTO toDTO(Customer customer) {
-        return CustomerDTO.builder()
-                .id(customer.getId())
-                .name(customer.getName())
-                .email(customer.getEmail())
-                .phone(customer.getPhone())
-                .address(customer.getAddress())
-                .build();
+    @Operation(summary = "Create a new customer", description = "Create a new customer with provided details")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Customer created successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid input data")
+    })
+    @PostMapping
+    public ResponseEntity<ApiResponse<CustomerDto>> createCustomer(@Valid @RequestBody Object request) {
+        try {
+            CustomerDto customerDto = customerService.createCustomer(request);
+            ApiResponse<CustomerDto> response = ApiResponse.<CustomerDto>builder()
+                    .success(true)
+                    .message("Customer created successfully")
+                    .data(customerDto)
+                    .build();
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (Exception e) {
+            ApiResponse<CustomerDto> response = ApiResponse.<CustomerDto>builder()
+                    .success(false)
+                    .message("Failed to create customer")
+                    .error(e.getMessage())
+                    .build();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
     }
 
-    // Helper: map DTO -> Entity
-    private Customer toEntity(CustomerDTO dto) {
-        return Customer.builder()
-                .id(dto.getId())
-                .name(dto.getName())
-                .email(dto.getEmail())
-                .phone(dto.getPhone())
-                .address(dto.getAddress())
-                .build();
-    }
-
+    @Operation(summary = "Get all customers", description = "Retrieve a list of all customers")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Customers retrieved successfully")
+    })
     @GetMapping
-    public ResponseEntity<List<CustomerDTO>> getAllCustomers() {
-        List<CustomerDTO> customers = customerService.getAllCustomers()
-                .stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(customers);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<CustomerDTO> getCustomerById(@PathVariable Long id) {
-        Optional<Customer> customer = customerService.getCustomerById(id);
-        return customer.map(value -> ResponseEntity.ok(toDTO(value)))
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    @PatchMapping("/{id}")
-    public ResponseEntity<?> updateCustomerPartially(
-            @PathVariable Long id,
-            @RequestBody Map<String, Object> updates) {
-
-        return customerService.getCustomerById(id)
-                .map(existingCustomer -> {
-                    updates.forEach((key, value) -> {
-                        switch (key) {
-                            case "name":
-                                existingCustomer.setName((String) value);
-                                break;
-                            case "phone":
-                                existingCustomer.setPhone((String) value);
-                                break;
-                            case "address":
-                                existingCustomer.setAddress((String) value);
-                                break;
-                            default:
-                                throw new IllegalArgumentException("Invalid field: " + key);
-                        }
-                    });
-                    Customer updatedCustomer = customerService.saveCustomer(existingCustomer);
-                    return ResponseEntity.ok(updatedCustomer);
-                })
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    public ResponseEntity<Map<String, String>> deleteCustomer(@PathVariable Long id) {
-        Optional<Customer> customer = customerService.getCustomerById(id);
-        Map<String, String> response = new HashMap<>();
-
-        if (customer.isPresent()) {
-            customerService.deleteCustomer(id);
-            response.put("message", "Customer with ID " + id + " was successfully deleted.");
+    public ResponseEntity<ApiResponse<List<CustomerDto>>> getAllCustomers() {
+        try {
+            List<CustomerDto> customers = customerService.getAllCustomers();
+            ApiResponse<List<CustomerDto>> response = ApiResponse.<List<CustomerDto>>builder()
+                    .success(true)
+                    .message("Customers retrieved successfully")
+                    .data(customers)
+                    .build();
             return ResponseEntity.ok(response);
-        } else {
-            response.put("message", "Customer with ID " + id + " was not found.");
+        } catch (Exception e) {
+            ApiResponse<List<CustomerDto>> response = ApiResponse.<List<CustomerDto>>builder()
+                    .success(false)
+                    .message("Failed to retrieve customers")
+                    .error(e.getMessage())
+                    .build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @Operation(summary = "Get customer by ID", description = "Retrieve a specific customer by their ID")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Customer found successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Customer not found")
+    })
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<CustomerDto>> getCustomerById(
+            @Parameter(description = "Customer ID") @PathVariable Long id) {
+        try {
+            CustomerDto customer = customerService.getCustomerById(id);
+            ApiResponse<CustomerDto> response = ApiResponse.<CustomerDto>builder()
+                    .success(true)
+                    .message("Customer found successfully")
+                    .data(customer)
+                    .build();
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            ApiResponse<CustomerDto> response = ApiResponse.<CustomerDto>builder()
+                    .success(false)
+                    .message("Customer not found")
+                    .error(e.getMessage())
+                    .build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+    }
+
+    @Operation(summary = "Update customer", description = "Update an existing customer's information")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Customer updated successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Customer not found")
+    })
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<CustomerDto>> updateCustomer(
+            @Parameter(description = "Customer ID") @PathVariable Long id,
+            @Valid @RequestBody Object request) {
+        try {
+            CustomerDto updatedCustomer = customerService.updateCustomer(id, request);
+            ApiResponse<CustomerDto> response = ApiResponse.<CustomerDto>builder()
+                    .success(true)
+                    .message("Customer updated successfully")
+                    .data(updatedCustomer)
+                    .build();
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            ApiResponse<CustomerDto> response = ApiResponse.<CustomerDto>builder()
+                    .success(false)
+                    .message("Failed to update customer")
+                    .error(e.getMessage())
+                    .build();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
+    @Operation(summary = "Delete customer", description = "Delete a customer by their ID")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Customer deleted successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Customer not found")
+    })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteCustomer(
+            @Parameter(description = "Customer ID") @PathVariable Long id) {
+        try {
+            customerService.deleteCustomer(id);
+            ApiResponse<Void> response = ApiResponse.<Void>builder()
+                    .success(true)
+                    .message("Customer deleted successfully")
+                    .build();
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            ApiResponse<Void> response = ApiResponse.<Void>builder()
+                    .success(false)
+                    .message("Failed to delete customer")
+                    .error(e.getMessage())
+                    .build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+    }
+
+    @Operation(summary = "Search customers by email", description = "Find customer by email address")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Customer search completed")
+    })
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<CustomerDto>> searchCustomerByEmail(
+            @Parameter(description = "Email address") @RequestParam String email) {
+        try {
+            CustomerDto customer = customerService.findCustomerByEmail(email);
+            ApiResponse<CustomerDto> response = ApiResponse.<CustomerDto>builder()
+                    .success(true)
+                    .message("Customer found successfully")
+                    .data(customer)
+                    .build();
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            ApiResponse<CustomerDto> response = ApiResponse.<CustomerDto>builder()
+                    .success(false)
+                    .message("Customer not found with provided email")
+                    .error(e.getMessage())
+                    .build();
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
     }

@@ -1,6 +1,7 @@
 package com.example.ecommerce_api.controller;
 
 
+import com.example.ecommerce_api.dto.CustomerDto;
 import com.example.ecommerce_api.entity.Customer;
 import com.example.ecommerce_api.service.CustomerService;
 import com.example.ecommerce_api.security.JwtUtil;
@@ -11,6 +12,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.http.*;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/auth")
@@ -94,16 +96,30 @@ public class AuthController {
             }
 
             // 3) Create or find customer
-            Customer customer = customerService.findOrCreateByEmail(email);
+            CustomerDto customerDto;
+            try{
+                customerDto = customerService.findCustomerByEmail(email);
+            }
+            catch(RuntimeException e){
+                CustomerDto newCustomer = CustomerDto.builder()
+                        .name("")
+                        .email(email)
+                        .phone("")
+                        .address("")
+                        .build();
+
+                customerDto = customerService.createCustomer(newCustomer);
+            }
+
 
             // 4) Generate JWT
             String jwt = jwtUtil.generateToken(email);
 
             // 5) Return customer id and jwt
             Map<String, Object> resp = new HashMap<>();
-            resp.put("customerId", customer.getId());
             resp.put("jwt", jwt);
             resp.put("email", email);
+            resp.put("customerId",customerDto.getCustomer_id());
             return ResponseEntity.ok(resp);
 
         } catch (Exception ex) {

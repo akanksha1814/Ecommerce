@@ -35,45 +35,17 @@
 
 package com.example.ecommerce_api.service;
 
-import com.example.ecommerce_api.DTO.ProductDTO;
-import com.example.ecommerce_api.DTO.ProductRequestDTO;
-import com.example.ecommerce_api.entity.Customer;
-import com.example.ecommerce_api.entity.Product;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import com.example.ecommerce_api.dto.ProductDto;
 
 import java.util.List;
-
-
-import java.util.List;
-import java.util.Optional;
-
-import java.util.List;
-import java.util.Optional;
 
 public interface ProductService {
-    // Basic CRUD operations
-    ProductDTO createProduct(ProductRequestDTO productRequestDTO);
-    Optional<ProductDTO> getProductById(Long id);
-    List<ProductDTO> getAllProducts();
-    ProductDTO updateProduct(Long id, ProductRequestDTO productRequestDTO);
+    ProductDto createProduct(Object request);
+    List<ProductDto> getAllProducts();
+    ProductDto getProductById(Long id);
+    ProductDto updateProduct(Long id, Object request);
     void deleteProduct(Long id);
-
-    // Enhanced operations
-    List<ProductDTO> getProductsByCategory(Long categoryId);
-    Page<ProductDTO> getProductsByCategoryPaginated(Long categoryId, Pageable pageable);
-    List<ProductDTO> searchProductsByName(String name);
-    List<ProductDTO> getProductsByPriceRange(Double minPrice, Double maxPrice);
-    List<ProductDTO> getLowStockProducts(Integer threshold);
-    List<ProductDTO> getInStockProducts();
-    List<ProductDTO> getProductsByCategoryName(String categoryName);
-
-    // Stock management
-    ProductDTO updateStock(Long id, Integer newStock);
-    ProductDTO addStock(Long id, Integer additionalStock);
-    ProductDTO reduceStock(Long id, Integer reduceBy);
-
-    // Utility methods
-    boolean existsById(Long id);
-    Long countProductsByCategory(Long categoryId);
+    List<ProductDto> getProductsByCategory(String category);
+    List<ProductDto> getProductsInStock();
+    void updateStock(Long productId, Integer quantity);
 }
