@@ -1,79 +1,96 @@
-// package com.example.ecommerce_api.service.impl;
-
-// import com.example.ecommerce_api.entity.Product;
-// import com.example.ecommerce_api.repository.ProductRepository;
-// import org.springframework.stereotype.Service;
-
-// import java.util.List;
-// import java.util.Optional;
-
-// @Service
-// public class ProductService {
-//     private final ProductRepository productRepository;
-
-//     public ProductService(ProductRepository productRepository) {
-//         this.productRepository = productRepository;
-//     }
-
-//     public List<Product> getAllProducts() {
-//         return productRepository.findAll();
-//     }
-
-//     public Optional<Product> getProductById(Long id) {
-//         return productRepository.findById(id);
-//     }
-
-//     public Product saveProduct(Product product) {
-//         return productRepository.save(product);
-//     }
-
-//     public void deleteProduct(Long id) {
-//         productRepository.deleteById(id);
-//     }
-// }
-
-
 package com.example.ecommerce_api.service;
 
-import com.example.ecommerce_api.DTO.ProductDTO;
-import com.example.ecommerce_api.DTO.ProductRequestDTO;
-import com.example.ecommerce_api.entity.Customer;
+import com.example.ecommerce_api.dto.ProductUpdateDTO;
+import com.example.ecommerce_api.entity.Order;
 import com.example.ecommerce_api.entity.Product;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-
+import com.example.ecommerce_api.repository.OrderRepository;
+import com.example.ecommerce_api.repository.ProductRepository;
+import com.example.ecommerce_api.exception.ResourceNotFoundException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+@Service
+public class ProductService {
+    private final ProductRepository productRepository;
+    private final OrderRepository orderRepository;
 
-import java.util.List;
-import java.util.Optional;
+    public ProductService(ProductRepository productRepository, OrderRepository orderRepository) {
+        this.productRepository = productRepository;
+        this.orderRepository = orderRepository;
+    }
 
-import java.util.List;
-import java.util.Optional;
+    public Product createProduct(Product product) {
+        return productRepository.save(product);
+    }
 
-public interface ProductService {
-    // Basic CRUD operations
-    ProductDTO createProduct(ProductRequestDTO productRequestDTO);
-    Optional<ProductDTO> getProductById(Long id);
-    List<ProductDTO> getAllProducts();
-    ProductDTO updateProduct(Long id, ProductRequestDTO productRequestDTO);
-    void deleteProduct(Long id);
+    @Transactional
+    public Product updateProduct(Long id, ProductUpdateDTO updateDTO) {
+        // 1. Find the existing product or throw an exception
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
 
-    // Enhanced operations
-    List<ProductDTO> getProductsByCategory(Long categoryId);
-    Page<ProductDTO> getProductsByCategoryPaginated(Long categoryId, Pageable pageable);
-    List<ProductDTO> searchProductsByName(String name);
-    List<ProductDTO> getProductsByPriceRange(Double minPrice, Double maxPrice);
-    List<ProductDTO> getLowStockProducts(Integer threshold);
-    List<ProductDTO> getInStockProducts();
-    List<ProductDTO> getProductsByCategoryName(String categoryName);
+        // 2. Store the original price to calculate the difference later
+        double oldPrice = product.getPrice();
 
-    // Stock management
-    ProductDTO updateStock(Long id, Integer newStock);
-    ProductDTO addStock(Long id, Integer additionalStock);
-    ProductDTO reduceStock(Long id, Integer reduceBy);
+        // 3. Partially update fields if they are provided in the DTO
+        if (updateDTO.getName() != null) {
+            product.setName(updateDTO.getName());
+        }
+        if (updateDTO.getDescription() != null) {
+            product.setDescription(updateDTO.getDescription());
+        }
+        if (updateDTO.getPrice() != null) {
+            product.setPrice(updateDTO.getPrice());
+        }
 
-    // Utility methods
-    boolean existsById(Long id);
-    Long countProductsByCategory(Long categoryId);
+        double priceDifference = product.getPrice() - oldPrice;
+        if (priceDifference != 0) {
+            for (Order order : product.getOrders()) {
+                order.setTotalPrice(order.getTotalPrice() + priceDifference);
+            }
+        }
+        return productRepository.save(product);
+    }
+
+    public List<Product> getAllProducts() {
+        return productRepository.findAll();
+    }
+
+    @Transactional
+    public Order addProductToOrder(Long orderId, Long productId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));
+
+        order.getProducts().add(product);
+        order.setTotalPrice(order.getTotalPrice() + product.getPrice());
+
+        return orderRepository.save(order);
+    }
+
+    public Set<Product> getProductsByOrderId(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+        return order.getProducts();
+    }
+
+    @Transactional
+    public void deleteProduct(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+
+        // Create a copy to avoid ConcurrentModificationException
+        Set<Order> affectedOrders = new HashSet<>(product.getOrders());
+
+        for (Order order : affectedOrders) {
+            order.setTotalPrice(order.getTotalPrice() - product.getPrice());
+            order.getProducts().remove(product);
+            orderRepository.save(order);
+        }
+        productRepository.delete(product);
+    }
 }
