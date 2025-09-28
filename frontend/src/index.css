@@ -1,0 +1,15 @@
+/* src/index.css */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+button {
+    margin-left: 5px;
+    cursor: pointer;
+}
+
+input {
+    margin-right: 5px;
+    padding: 5px;
+}
