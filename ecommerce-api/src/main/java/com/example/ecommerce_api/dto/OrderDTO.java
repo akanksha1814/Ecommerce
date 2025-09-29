@@ -1,7 +1,7 @@
 package com.example.ecommerce_api.dto;
 
+import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 public class OrderDTO {
 
@@ -9,19 +9,19 @@ public class OrderDTO {
     private Double totalPrice;
     private String status;
     private Long customerId;
-    private Set<ProductDTO> products;
+    private List<OrderItemDTO> items;
 
     // 1. No-Argument Constructor
     public OrderDTO() {
     }
 
     // 2. All-Argument Constructor
-    public OrderDTO(Long id, Double totalPrice, String status, Long customerId, Set<ProductDTO> products) {
+    public OrderDTO(Long id, Double totalPrice, String status, Long customerId, List<OrderItemDTO> items) {
         this.id = id;
         this.totalPrice = totalPrice;
         this.status = status;
         this.customerId = customerId;
-        this.products = products;
+        this.items = items;
     }
 
     // 3. Getters and Setters
@@ -57,12 +57,12 @@ public class OrderDTO {
         this.customerId = customerId;
     }
 
-    public Set<ProductDTO> getProducts() {
-        return products;
+    public List<OrderItemDTO> getItems() {
+        return items;
     }
 
-    public void setProducts(Set<ProductDTO> products) {
-        this.products = products;
+    public void setItems(List<OrderItemDTO> items) {
+        this.items = items;
     }
 
     // 4. (Optional but recommended) equals(), hashCode(), and toString()
@@ -81,12 +81,13 @@ public class OrderDTO {
 
     @Override
     public String toString() {
+        int itemCount = (items != null) ? items.size() : 0;
         return "OrderDTO{" +
                 "id=" + id +
                 ", totalPrice=" + totalPrice +
                 ", status='" + status + '\'' +
                 ", customerId=" + customerId +
-                ", products=" + products.size() + " items" +
+                ", items=" + itemCount +
                 '}';
     }
 }

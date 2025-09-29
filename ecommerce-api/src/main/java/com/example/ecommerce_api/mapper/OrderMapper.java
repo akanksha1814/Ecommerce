@@ -4,6 +4,7 @@ import com.example.ecommerce_api.dto.OrderDTO;
 import com.example.ecommerce_api.dto.ProductDTO;
 import com.example.ecommerce_api.entity.Order;
 import com.example.ecommerce_api.entity.Product;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.stream.Collectors;
@@ -11,6 +12,12 @@ import java.util.Set;
 
 @Component
 public class OrderMapper {
+    private final OrderItemMapper orderItemMapper; // 1. Inject the new mapper
+
+    @Autowired
+    public OrderMapper(OrderItemMapper orderItemMapper) {
+        this.orderItemMapper = orderItemMapper;
+    }
 
     public OrderDTO toOrderDTO(Order order) {
         OrderDTO dto = new OrderDTO();
@@ -19,13 +26,18 @@ public class OrderMapper {
         dto.setStatus(order.getStatus());
         dto.setCustomerId(order.getCustomer().getId());
 
-        Set<ProductDTO> productDTOs = order.getProducts().stream()
-                .map(this::toProductDTO)
-                .collect(Collectors.toSet());
-        dto.setProducts(productDTOs);
+        // 2. Update this logic to map OrderItems to OrderItemDTOs
+        if (order.getItems() != null) {
+            dto.setItems(order.getItems().stream()
+                    .map(orderItemMapper::toDTO)
+                    .collect(Collectors.toList()));
+        }
 
         return dto;
     }
+
+
+
 
     public ProductDTO toProductDTO(Product product) {
         ProductDTO dto = new ProductDTO();

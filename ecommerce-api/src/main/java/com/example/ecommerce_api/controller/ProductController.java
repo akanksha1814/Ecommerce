@@ -2,8 +2,11 @@ package com.example.ecommerce_api.controller;
 
 import com.example.ecommerce_api.dto.*;
 import com.example.ecommerce_api.entity.Order;
+import com.example.ecommerce_api.entity.OrderItem;
 import com.example.ecommerce_api.entity.Product;
+import com.example.ecommerce_api.mapper.OrderItemMapper;
 import com.example.ecommerce_api.mapper.OrderMapper;
+import com.example.ecommerce_api.service.OrderService;
 import com.example.ecommerce_api.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,9 +23,13 @@ import java.util.stream.Collectors;
 @Tag(name = "Product Management", description = "APIs for managing products and their relation to orders")
 public class ProductController {
     private final ProductService productService;
+    private final OrderService orderService;
+    private final OrderItemMapper orderItemMapper;
 
-    public ProductController(ProductService productService) {
+    public ProductController(ProductService productService,OrderService orderService,OrderItemMapper orderItemMapper) {
         this.productService = productService;
+        this.orderService=orderService;
+        this.orderItemMapper=orderItemMapper;
     }
     @Autowired
     private OrderMapper orderMapper;
@@ -72,14 +79,22 @@ public class ProductController {
         OrderDTO responseDTO = orderMapper.toOrderDTO(updatedOrder);
         return ResponseEntity.ok(responseDTO);
     }
-
-    @Operation(summary = "Get all products within a specific order")
-    @GetMapping("/orders/{orderId}/products")
-    public ResponseEntity<Set<ProductDTO>> getProductsInOrder(@PathVariable Long orderId) {
-        Set<Product> productEntities = productService.getProductsByOrderId(orderId);
-        Set<ProductDTO> productDTOs = productEntities.stream()
-                .map(orderMapper::toProductDTO)
-                .collect(Collectors.toSet());
-        return ResponseEntity.ok(productDTOs);
+    // We'll move this to OrderController for better REST structure
+    @Operation(summary = "Get all items within a specific order")
+    @GetMapping("/orders/{orderId}/items")
+    public ResponseEntity<List<OrderItemDTO>> getItemsInOrder(@PathVariable Long orderId) {
+        List<OrderItem> items = orderService.getItemsByOrderId(orderId);
+        // You'll need an OrderItemMapper to convert List<OrderItem> to List<OrderItemDTO>
+        List<OrderItemDTO> dtos = items.stream().map(orderItemMapper::toDTO).collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
+//    @Operation(summary = "Get all products within a specific order")
+//    @GetMapping("/orders/{orderId}/products")
+//    public ResponseEntity<Set<ProductDTO>> getProductsInOrder(@PathVariable Long orderId) {
+//        List<Product> productEntities = productService.getProductsByOrderId(orderId);
+//        Set<ProductDTO> productDTOs = productEntities.stream()
+//                .map(orderMapper::toProductDTO)
+//                .collect(Collectors.toSet());
+//        return ResponseEntity.ok(productDTOs);
+//    }
 }

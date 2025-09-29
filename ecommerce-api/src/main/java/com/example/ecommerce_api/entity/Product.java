@@ -2,9 +2,8 @@ package com.example.ecommerce_api.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+
+import java.util.*;
 
 @Entity
 public class Product {
@@ -24,8 +23,8 @@ public class Product {
     @Column(nullable = false)
     private int stock;
 
-    @ManyToMany(mappedBy = "products")
-    private Set<Order> orders = new HashSet<>();
+//    @ManyToMany(mappedBy = "products")
+//    private Set<Order> orders = new HashSet<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
@@ -35,7 +34,12 @@ public class Product {
     // 1. No-Argument Constructor (Required by JPA)
     public Product() {
     }
+    @OneToMany(mappedBy = "product")
+    private List<OrderItem> orderItems = new ArrayList<>();
 
+    // Ensure you have a getter and setter for the new 'orderItems' list
+    public List<OrderItem> getOrderItems() { return orderItems; }
+    public void setOrderItems(List<OrderItem> orderItems) { this.orderItems = orderItems; }
     // 2. Updated Constructor for creating a new product
     public Product(String name, String description, double price, int stock, Category category) {
         this.name = name;
@@ -94,13 +98,7 @@ public class Product {
         this.category = category;
     }
 
-    public Set<Order> getOrders() {
-        return orders;
-    }
 
-    public void setOrders(Set<Order> orders) {
-        this.orders = orders;
-    }
 
     // 4. (Optional but recommended) Updated toString(), equals(), and hashCode()
     @Override

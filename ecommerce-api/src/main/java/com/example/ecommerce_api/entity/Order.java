@@ -1,9 +1,8 @@
 package com.example.ecommerce_api.entity;
 
 import jakarta.persistence.*;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+
+import java.util.*;
 
 @Entity
 @Table(name = "orders")
@@ -20,13 +19,11 @@ public class Order {
     @JoinColumn(name = "customer_id")
     private Customer customer;
 
-    @ManyToMany
-    @JoinTable(
-            name = "order_products",
-            joinColumns = @JoinColumn(name = "order_id"),
-            inverseJoinColumns = @JoinColumn(name = "product_id")
-    )
-    private Set<Product> products = new HashSet<>();
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderItem> items = new ArrayList<>();
+
+
+
 
     // 1. No-Argument Constructor (Required by JPA)
     public Order() {
@@ -71,14 +68,10 @@ public class Order {
     public void setCustomer(Customer customer) {
         this.customer = customer;
     }
+    public List<OrderItem> getItems() { return items; }
+    public void setItems(List<OrderItem> items) { this.items = items; }
 
-    public Set<Product> getProducts() {
-        return products;
-    }
 
-    public void setProducts(Set<Product> products) {
-        this.products = products;
-    }
 
     // 4. (Optional but recommended) toString(), equals(), and hashCode()
     @Override

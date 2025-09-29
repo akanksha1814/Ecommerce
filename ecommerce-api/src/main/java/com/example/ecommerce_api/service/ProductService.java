@@ -4,8 +4,10 @@ import com.example.ecommerce_api.dto.ProductCreateDTO;
 import com.example.ecommerce_api.dto.ProductUpdateDTO;
 import com.example.ecommerce_api.entity.Category;
 import com.example.ecommerce_api.entity.Order;
+import com.example.ecommerce_api.entity.OrderItem;
 import com.example.ecommerce_api.entity.Product;
 import com.example.ecommerce_api.repository.CategoryRepository;
+import com.example.ecommerce_api.repository.OrderItemRepository;
 import com.example.ecommerce_api.repository.OrderRepository;
 import com.example.ecommerce_api.repository.ProductRepository;
 import com.example.ecommerce_api.exception.ResourceNotFoundException;
@@ -13,18 +15,22 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductService {
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
     private final CategoryRepository categoryRepository;
+    private final OrderItemRepository orderItemRepository;
 
-    public ProductService(ProductRepository productRepository, OrderRepository orderRepository, CategoryRepository categoryRepository) {
+    public ProductService(ProductRepository productRepository, OrderRepository orderRepository, CategoryRepository categoryRepository,OrderItemRepository orderItemRepository) {
         this.productRepository = productRepository;
         this.orderRepository = orderRepository;
         this.categoryRepository=categoryRepository;
+        this.orderItemRepository=orderItemRepository;
     }
 
     @Transactional
@@ -48,14 +54,12 @@ public class ProductService {
 
     @Transactional
     public Product updateProduct(Long id, ProductUpdateDTO updateDTO) {
-        // 1. Find the existing product or throw an exception
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
 
-        // 2. Store the original price to calculate the difference later
         double oldPrice = product.getPrice();
 
-        // 3. Partially update fields if they are provided in the DTO
+        // Partially update fields if they are provided in the DTO
         if (updateDTO.getName() != null) {
             product.setName(updateDTO.getName());
         }
@@ -68,11 +72,14 @@ public class ProductService {
         if (updateDTO.getStock() != null) {
             product.setStock(updateDTO.getStock());
         }
-
         double priceDifference = product.getPrice() - oldPrice;
+
         if (priceDifference != 0) {
-            for (Order order : product.getOrders()) {
-                order.setTotalPrice(order.getTotalPrice() + priceDifference);
+            for (OrderItem item : product.getOrderItems()) {
+                Order order = item.getOrder();
+                if (!"PLACED".equals(order.getStatus()) && !"DELIVERED".equals(order.getStatus())) {
+                    order.setTotalPrice(order.getTotalPrice() + (priceDifference * item.getQuantity()));
+                }
             }
         }
         return productRepository.save(product);
@@ -91,26 +98,48 @@ public class ProductService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));
 
-        // New Business Logic
-        if ("PLACED".equals(order.getStatus())) {
-            throw new IllegalStateException("Cannot modify an order that has already been placed.");
+        // 1. Check if the order can be modified
+        if ("PLACED".equals(order.getStatus()) || "DELIVERED".equals(order.getStatus())) {
+            throw new IllegalStateException("Cannot modify an order that has already been placed or delivered.");
         }
+        // 2. Check if the product is in stock
         if (product.getStock() <= 0) {
             throw new IllegalStateException("Product " + product.getName() + " is out of stock.");
         }
 
-        order.getProducts().add(product);
+        // 3. Check if an OrderItem for this product already exists in the order
+        OrderItem existingItem = order.getItems().stream()
+                .filter(item -> item.getProduct() != null && item.getProduct().getId().equals(productId))
+                .findFirst()
+                .orElse(null);
+
+        if (existingItem != null) {
+            // If it exists, just increment the quantity
+            existingItem.setQuantity(existingItem.getQuantity() + 1);
+        } else {
+            // If it's a new product, create a new OrderItem and add it to the order
+            OrderItem newItem = new OrderItem(order, product, 1);
+            order.getItems().add(newItem);
+        }
+
+        // 4. Update the order's total price and decrement the product's stock
         order.setTotalPrice(order.getTotalPrice() + product.getPrice());
-        product.setStock(product.getStock() - 1); // Decrement stock
+        product.setStock(product.getStock() - 1);
 
         return orderRepository.save(order);
     }
+  /**NO NEED FOR THIS**/
+//    public List<Product> getProductsByOrderId(Long orderId) {
+//        Order order = orderRepository.findById(orderId)
+//                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+//
+//        // Get the list of OrderItems and map it to a list of Products
+//        return order.getItems().stream()
+//                .map(OrderItem::getProduct)
+//                .filter(Objects::nonNull) // Ensure no null products are included
+//                .collect(Collectors.toList());
+//    }
 
-    public Set<Product> getProductsByOrderId(Long orderId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
-        return order.getProducts();
-    }
 
 //    @Transactional
 //    public void deleteProduct(Long id) {
@@ -132,24 +161,25 @@ public class ProductService {
 //        }
 //        productRepository.delete(product);
 //    }
-    @Transactional
+@Transactional
+public void deleteProduct(Long id) {
+    Product product = productRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
 
-    public void deleteProduct(Long id) {
+    List<OrderItem> affectedItems = orderItemRepository.findByProductId(id);
 
-        Product product = productRepository.findById(id)
-
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
-
-
-        Set<Order> affectedOrders = new HashSet<>(product.getOrders());
-
-        for (Order order : affectedOrders) {
-            order.setTotalPrice(order.getTotalPrice() - product.getPrice());
-            order.getProducts().remove(product);
-            orderRepository.save(order);
+    for (OrderItem item : affectedItems) {
+        Order order = item.getOrder();
+        if ("PLACED".equals(order.getStatus()) || "DELIVERED".equals(order.getStatus())) {
+            item.setProduct(null); // Preserve historical record
+        } else {
+            double totalItemPrice = item.getPriceAtPurchase() * item.getQuantity();
+            order.setTotalPrice(order.getTotalPrice() - totalItemPrice);
+            order.getItems().remove(item); // Remove item from modifiable order
         }
-        productRepository.delete(product);
     }
+    productRepository.delete(product);
+}
     public List<Product> getProductsByCategoryId(Long categoryId) {
         // 1. Find the category or throw an exception if it doesn't exist.
         Category category = categoryRepository.findById(categoryId)

@@ -86,7 +86,7 @@ public class OrderController {
     public ResponseEntity<OrderDTO> removeProductFromOrder(
             @PathVariable Long orderId,
             @PathVariable Long productId) {
-        Order updatedOrder = orderService.removeProductFromOrder( orderId, productId);
+        Order updatedOrder = orderService.removeProductFromOrder(orderId, productId);
         return ResponseEntity.ok(orderMapper.toOrderDTO(updatedOrder));
     }
 
