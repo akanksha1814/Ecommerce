@@ -35,8 +35,14 @@ public class OrderController {
 
     @Operation(summary = "Get an order by its ID")
     @GetMapping("/orders/{orderId}")
-    public ResponseEntity<Order> getOrderById(@PathVariable Long orderId) {
-        return ResponseEntity.ok(orderService.getOrderById(orderId));
+    public ResponseEntity<OrderDTO> getOrderById(@PathVariable Long orderId) {
+        Order orderEntity = orderService.getOrderById(orderId);
+
+        // 3. Map the entity to a DTO for a clean, non-recursive response
+        OrderDTO orderDTO = orderMapper.toOrderDTO(orderEntity);
+
+        // 4. Return the DTO
+        return ResponseEntity.ok(orderDTO);
     }
 
     @Operation(summary = "Get all orders for a specific customer")
@@ -71,5 +77,32 @@ public class OrderController {
     public ResponseEntity<GenericResponse> deleteAllOrdersByCustomer(@PathVariable Long customerId) {
         orderService.deleteAllOrdersByCustomerId(customerId);
         return ResponseEntity.ok(new GenericResponse("All orders for customer with ID " + customerId + " deleted successfully."));
+    }
+
+    // Inside OrderController.java
+
+    @Operation(summary = "Remove a product from an order")
+    @DeleteMapping("/orders/{orderId}/products/{productId}")
+    public ResponseEntity<OrderDTO> removeProductFromOrder(
+            @PathVariable Long orderId,
+            @PathVariable Long productId) {
+        Order updatedOrder = orderService.removeProductFromOrder( orderId, productId);
+        return ResponseEntity.ok(orderMapper.toOrderDTO(updatedOrder));
+    }
+
+    @Operation(summary = "Change order status to PLACED")
+    @PostMapping("/customers/{customerId}/orders/{orderId}/place")
+    public ResponseEntity<OrderDTO> placeOrder(
+            @PathVariable Long customerId,
+            @PathVariable Long orderId) {
+        Order placedOrder = orderService.placeOrder(customerId, orderId);
+        return ResponseEntity.ok(orderMapper.toOrderDTO(placedOrder));
+    }
+
+    @Operation(summary = "Change order status to DELIVERED")
+    @PostMapping("/orders/{orderId}/deliver")
+    public ResponseEntity<OrderDTO> deliverOrder(@PathVariable Long orderId) {
+        Order deliveredOrder = orderService.deliverOrder(orderId);
+        return ResponseEntity.ok(orderMapper.toOrderDTO(deliveredOrder));
     }
 }

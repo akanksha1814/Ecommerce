@@ -1,5 +1,6 @@
 package com.example.ecommerce_api.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Objects;
@@ -20,21 +21,31 @@ public class Product {
     @Column(nullable = false)
     private double price;
 
+    @Column(nullable = false)
+    private int stock;
+
     @ManyToMany(mappedBy = "products")
     private Set<Order> orders = new HashSet<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    @JsonIgnore // Prevents recursion when fetching a product
+    private Category category; // New relationship
 
     // 1. No-Argument Constructor (Required by JPA)
     public Product() {
     }
 
-    // 2. Constructor for creating a new product
-    public Product(String name, String description, double price) {
+    // 2. Updated Constructor for creating a new product
+    public Product(String name, String description, double price, int stock, Category category) {
         this.name = name;
         this.description = description;
         this.price = price;
+        this.stock = stock;
+        this.category = category;
     }
 
-    // 3. Getters and Setters
+    // 3. Getters and Setters for all fields (including new ones)
     public Long getId() {
         return id;
     }
@@ -67,6 +78,22 @@ public class Product {
         this.price = price;
     }
 
+    public int getStock() {
+        return stock;
+    }
+
+    public void setStock(int stock) {
+        this.stock = stock;
+    }
+
+    public Category getCategory() {
+        return category;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
+    }
+
     public Set<Order> getOrders() {
         return orders;
     }
@@ -75,13 +102,14 @@ public class Product {
         this.orders = orders;
     }
 
-    // 4. (Optional but recommended) toString(), equals(), and hashCode()
+    // 4. (Optional but recommended) Updated toString(), equals(), and hashCode()
     @Override
     public String toString() {
         return "Product{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", price=" + price +
+                ", stock=" + stock +
                 '}';
     }
 

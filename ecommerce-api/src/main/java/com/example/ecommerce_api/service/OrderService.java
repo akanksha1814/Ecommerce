@@ -2,9 +2,11 @@ package com.example.ecommerce_api.service;
 
 import com.example.ecommerce_api.entity.Customer;
 import com.example.ecommerce_api.entity.Order;
+import com.example.ecommerce_api.entity.Product;
 import com.example.ecommerce_api.repository.CustomerRepository;
 import com.example.ecommerce_api.repository.OrderRepository;
 import com.example.ecommerce_api.exception.ResourceNotFoundException;
+import com.example.ecommerce_api.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -13,10 +15,12 @@ import java.util.List;
 public class OrderService {
     private final OrderRepository orderRepository;
     private final CustomerRepository customerRepository;
+    private final ProductRepository productRepository;
 
-    public OrderService(OrderRepository orderRepository, CustomerRepository customerRepository) {
+    public OrderService(OrderRepository orderRepository, CustomerRepository customerRepository,ProductRepository productRepository) {
         this.orderRepository = orderRepository;
         this.customerRepository = customerRepository;
+        this.productRepository=productRepository;
     }
 
     public Order getOrderById(Long id) {
@@ -63,4 +67,47 @@ public class OrderService {
         }
         orderRepository.deleteAllByCustomerId(customerId);
     }
+    // Inside OrderService.java
+
+    @Transactional
+    public Order removeProductFromOrder( Long orderId, Long productId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found."));
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found."));
+
+        if ("PLACED".equals(order.getStatus())) {
+            throw new IllegalStateException("Cannot modify an order that has already been placed.");
+        }
+
+        if (order.getProducts().remove(product)) {
+            order.setTotalPrice(order.getTotalPrice() - product.getPrice());
+            product.setStock(product.getStock() + 1); // Increment stock
+        } else {
+            throw new ResourceNotFoundException("Product not found in this order.");
+        }
+
+        return orderRepository.save(order);
+    }
+
+    public Order placeOrder(Long customerId, Long orderId) {
+        Order order = orderRepository.findByIdAndCustomerId(orderId, customerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found for this customer."));
+        if (!"CREATED".equals(order.getStatus())) {
+            throw new IllegalStateException("Only orders with status CREATED can be placed.");
+        }
+        order.setStatus("PLACED");
+        return orderRepository.save(order);
+    }
+
+    public Order deliverOrder(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found."));
+        if (!"PLACED".equals(order.getStatus())) {
+            throw new IllegalStateException("Only orders with status PLACED can be delivered.");
+        }
+        order.setStatus("DELIVERED");
+        return orderRepository.save(order);
+    }
+
 }

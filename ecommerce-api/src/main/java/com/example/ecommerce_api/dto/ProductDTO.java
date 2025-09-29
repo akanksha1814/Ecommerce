@@ -8,17 +8,21 @@ public class ProductDTO {
     private String name;
     private String description;
     private double price;
+    private int stock; // New field
+    private Long categoryId; // New field
 
     // 1. No-Argument Constructor
     public ProductDTO() {
     }
 
-    // 2. All-Argument Constructor
-    public ProductDTO(Long id, String name, String description, double price) {
+    // 2. Updated All-Argument Constructor
+    public ProductDTO(Long id, String name, String description, double price, int stock, Long categoryId) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.price = price;
+        this.stock = stock;
+        this.categoryId = categoryId;
     }
 
     // 3. Getters and Setters
@@ -54,6 +58,22 @@ public class ProductDTO {
         this.price = price;
     }
 
+    public int getStock() {
+        return stock;
+    }
+
+    public void setStock(int stock) {
+        this.stock = stock;
+    }
+
+    public Long getCategoryId() {
+        return categoryId;
+    }
+
+    public void setCategoryId(Long categoryId) {
+        this.categoryId = categoryId;
+    }
+
     // 4. (Optional but recommended) equals(), hashCode(), and toString()
     @Override
     public boolean equals(Object o) {
@@ -74,6 +94,8 @@ public class ProductDTO {
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", price=" + price +
+                ", stock=" + stock +
+                ", categoryId=" + categoryId +
                 '}';
     }
 }

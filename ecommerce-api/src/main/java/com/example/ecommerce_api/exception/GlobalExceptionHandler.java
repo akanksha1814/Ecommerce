@@ -14,4 +14,12 @@ public class GlobalExceptionHandler {
         GenericResponse response = new GenericResponse(ex.getMessage());
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<GenericResponse> handleIllegalStateException(IllegalStateException ex) {
+        // Create a response body with the message from the exception
+        GenericResponse response = new GenericResponse(ex.getMessage());
+        // Return an HTTP 409 Conflict status
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+    }
+
 }

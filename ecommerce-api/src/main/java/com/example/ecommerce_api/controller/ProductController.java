@@ -1,9 +1,6 @@
 package com.example.ecommerce_api.controller;
 
-import com.example.ecommerce_api.dto.GenericResponse;
-import com.example.ecommerce_api.dto.OrderDTO;
-import com.example.ecommerce_api.dto.ProductDTO;
-import com.example.ecommerce_api.dto.ProductUpdateDTO;
+import com.example.ecommerce_api.dto.*;
 import com.example.ecommerce_api.entity.Order;
 import com.example.ecommerce_api.entity.Product;
 import com.example.ecommerce_api.mapper.OrderMapper;
@@ -30,17 +27,24 @@ public class ProductController {
     @Autowired
     private OrderMapper orderMapper;
 
-    @Operation(summary = "Create a new product")
+    @Operation(summary = "Create a new product within a category")
     @PostMapping("/products")
-    public ResponseEntity<String> createProduct(@RequestBody Product product) {
-        Product createdProduct = productService.createProduct(product);
-        return new ResponseEntity<>("Product with id:"+createdProduct.getId()+"is created", HttpStatus.CREATED);
+    public ResponseEntity<ProductDTO> createProduct(@RequestBody ProductCreateDTO productCreateDTO) {
+        // The service layer will handle all the logic, including finding the category
+        Product newProduct = productService.createProduct(productCreateDTO);
+        ProductDTO responseDTO = orderMapper.toProductDTO(newProduct);
+        return new ResponseEntity<>(responseDTO, HttpStatus.CREATED);
     }
 
     @Operation(summary = "Get all products")
     @GetMapping("/products")
-    public ResponseEntity<List<Product>> getAllProducts() {
-        return ResponseEntity.ok(productService.getAllProducts());
+    public ResponseEntity<List<ProductDTO>> getAllProducts() {
+
+        List<Product> productEntities = productService.getAllProducts();
+        List<ProductDTO> productDTOs = productEntities.stream()
+                .map(orderMapper::toProductDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(productDTOs);
     }
 
     @Operation(summary = "Partially update a product's details and adjust order totals")

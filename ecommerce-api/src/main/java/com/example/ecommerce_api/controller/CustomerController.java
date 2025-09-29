@@ -5,6 +5,7 @@ import com.example.ecommerce_api.entity.Customer;
 import com.example.ecommerce_api.service.CustomerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -35,7 +36,7 @@ public class CustomerController {
 
     @Operation(summary = "Update a customer's details partially")
     @PatchMapping("/{id}")
-    public ResponseEntity<Customer> updateCustomer(@PathVariable Long id, @RequestBody Map<String, Object> updates) {
+    public ResponseEntity<Customer> updateCustomer(@PathVariable Long id,  @RequestBody Map<String, Object> updates) {
         return ResponseEntity.ok(customerService.updateCustomer(id, updates));
     }
 

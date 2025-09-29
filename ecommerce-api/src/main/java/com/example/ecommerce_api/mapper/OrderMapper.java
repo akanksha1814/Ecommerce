@@ -33,6 +33,10 @@ public class OrderMapper {
         dto.setName(product.getName());
         dto.setDescription(product.getDescription());
         dto.setPrice(product.getPrice());
+        dto.setStock(product.getStock()); // Map stock
+        if (product.getCategory() != null) {
+            dto.setCategoryId(product.getCategory().getId()); // Map categoryId
+        }
         return dto;
     }
 }

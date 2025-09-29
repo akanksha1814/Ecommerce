@@ -19,8 +19,6 @@ public class JwtFilter extends OncePerRequestFilter {
 
     @Autowired
     private JwtUtil jwtUtil;
-
-    // 1. Define the list of paths to be excluded from filtering
     private final List<String> excludedPaths = List.of(
             "/auth",
             "/v3/api-docs",
@@ -56,9 +54,6 @@ public class JwtFilter extends OncePerRequestFilter {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid/Expired Token");
                 return;
             }
-        }else{
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Request not authenticated.");
-            return;
         }
 
         filterChain.doFilter(request, response);

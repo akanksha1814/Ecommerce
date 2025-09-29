@@ -1,6 +1,8 @@
 package com.example.ecommerce_api.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Pattern;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -14,6 +16,7 @@ public class Customer {
     private String email;
 
     private String name;
+    @Pattern(regexp = "^\\d{10}$", message = "Phone number must be 10 digits")
     private String phone;
     private String address;
 
