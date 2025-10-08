@@ -18,13 +18,13 @@ public class CustomerService {
     }
     @Transactional
     public Customer findOrCreateByEmail(String email) {
-        // Use the repository method. If the customer exists, it's returned.
-        // If not, the lambda inside orElseGet is executed to create a new one.
-        return customerRepository.findByEmail(email)
+
+        String normalizedEmail = email.toLowerCase();
+
+        return customerRepository.findByEmail(normalizedEmail)
                 .orElseGet(() -> {
                     Customer newCustomer = new Customer();
-                    newCustomer.setEmail(email);
-                    // All other fields (name, phone, address) will be null by default
+                    newCustomer.setEmail(normalizedEmail);
                     return customerRepository.save(newCustomer);
                 });
     }
